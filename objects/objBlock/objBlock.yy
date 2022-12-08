@@ -6,7 +6,7 @@
     "name": "sprBlock",
     "path": "sprites/sprBlock/sprBlock.yy",
   },
-  "solid": true,
+  "solid": false,
   "visible": true,
   "managed": true,
   "spriteMaskId": null,

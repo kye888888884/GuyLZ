@@ -1,5 +1,7 @@
 /// @description Initialize variables
 
+event_user(0)
+
 #region Remove this please when import your project
 #macro DIRECTIONAL_TAP_FIX false
 room_speed = 50
@@ -21,7 +23,7 @@ function scrButtonCheckReleased(key) {
 frozen = false // Sets if the player can move or not
 
 grav_force = 0.446
-grav_direction = new Point(0, 1)
+grav_direction = new Kyh.Point(0, 1)
 
 jump = 8.5 // Sets how fast the player jumps
 jump2 = 7 // Sets how fast the player double jumps
@@ -30,7 +32,7 @@ is_jumping = false
 djump = 1 // Allow the player to double jump as soon as he spawns
 maxHSpeed = 3 // Max horizontal speed
 maxVSpeed = 9 // Max vertical speed
-velocity = new Point(0, 0)
+velocity = new Kyh.Point(0, 0)
 
 xScale = 1 // Sets the direction the player is facing (1 is facing right, -1 is facing left)
 
@@ -40,10 +42,101 @@ mask_index = sprPlayerMask
 // Create map
 map = instance_create_depth(0, 0, 0, objMap)
 
+// Relate with gravity
+pre_grav_direction = 270
+
+// Custom functions
 function get_grav_direction() {
 	return grav_direction.get_direction() - 270
 }
+function move_outside(dir, dis, obj, move_anyway=false) {
+	var cur = 0
+	var xx, yy
+	while (cur <= dis) {
+		xx = x + lengthdir_x(cur, dir)
+		yy = y + lengthdir_y(cur, dir)
+			
+		if (!place_meeting(xx, yy, obj)) {
+			x = xx
+			y = yy
+			cur = dis
+		}
+		
+		cur++
+	}
+	if (move_anyway) {
+		x = xx
+		y = yy
+	}
+}
+function move_contact(dir, dis, obj, move_anyway=false) {
+	var cur = 0
+	var xx, yy
+	while (cur <= dis) {
+		xx = x + lengthdir_x(cur, dir)
+		yy = y + lengthdir_y(cur, dir)
+			
+		if (place_meeting(xx, yy, obj)) {
+			cur--
+			x = x + lengthdir_x(cur, dir)
+			y = y + lengthdir_y(cur, dir)
+			cur = dis
+		}
+		
+		cur++
+	}
+	if (move_anyway) {
+		x = xx
+		y = yy
+	}
+}
+function pos(_x, _y) {
+	var p = new Kyh.Point(_x, _y)
+	p.add_dir(get_grav_direction())
+	return p
+}
+function add_pos(_x, _y) {
+    x += pos(_x, _y).x
+    y += pos(_x, _y).y
+}
+function raycast(offset_x, offset_y, dir, len=500) {
+	var src_x = floor(x) + pos(0, 8).x
+	var src_y = floor(y) + pos(0, 8).y
+	var dest_x
+	var dest_y
+	
+	var is_start = true
+	var is_over = false
+	
+	var gap = len
+	
+	while (true) {
+		dest_x = src_x + lengthdir_x(len, dir)
+		dest_y = src_y + lengthdir_y(len, dir)
+		var col = collision_line(src_x, src_y, dest_x, dest_y, objBlock, true, false)
+		
+		gap = gap / 2
+		if (gap < 0.5)
+			break
+		if (col == noone) {
+			if (is_start)
+				return noone
+			is_over = false
+			len += gap
+		}
+		else {
+			is_over = true
+			len -= gap
+		}
+		is_start = false
+	}
+	return new Kyh.Point(dest_x, dest_y)
+}
+function meeting(add_x, add_y) {
+	return place_meeting(x+pos(add_x, add_y).x, y+pos(add_x, add_y).y, objBlock)
+}
 
+// Actions
 function Jump() {
     if (place_meeting(x+pos(0, 1).x,y+pos(0, 1).y,objBlock)) {
 	    // Single jump
@@ -77,24 +170,16 @@ function Shoot() {
 	}
 }
 
-function pos(_x, _y) {
-	var p = new Point(_x, _y)
-	p.add_dir(get_grav_direction())
-	return p
-}
 
-function add_pos(_x, _y) {
-    x += pos(_x, _y).x
-    y += pos(_x, _y).y
-}
-
+// Handle player
 function HandleGravity() {
 	if (keyboard_check(ord("A")))
 		grav_direction.add_dir(2)
     if (keyboard_check(ord("D")))
 		grav_direction.add_dir(-2)
 	velocity.y += grav_force
-	image_angle = get_grav_direction()
+	//if (abs(image_angle - get_grav_direction()) > 1) 
+		image_angle = Kyh.stairs(get_grav_direction(), 5, -2.5)
 }
 function HandleMaxSpeed() {
 	// Check if moving faster vertically than max speed
@@ -116,7 +201,6 @@ function HandleActions() {
 		}
 	}
 }
-
 function HandleMove() {
 	HandleGravity()
 
@@ -136,9 +220,6 @@ function HandleMove() {
 		}
 	}
 
-	// Vine checks
-	var notOnBlock = (place_free(x+pos(0, 1).x,y+pos(0, 1).y))
-
 	if (h != 0) { // Player is moving
 	    xScale = h
 	
@@ -149,22 +230,42 @@ function HandleMove() {
 	    velocity.x = 0
 	}
 
-    //if (place_meeting(x+pos(0, 1).x, y+pos(0, 1).y, objBlock))
-    //    velocity.y = 0
-
     HandleActions()
-
-    var spd = new Point(velocity.x, velocity.y)
+	
+	var dir = grav_direction.get_direction()
+	if (meeting(velocity.x, 0) && meeting(velocity.x, -maxHSpeed)) {
+		if (velocity.x > 0) {
+			move_contact(dir + 90, velocity.x, objBlock)
+			velocity.x = 0
+		}
+		else if (velocity.x < 0) {
+			move_contact(dir - 90, -velocity.x, objBlock)
+			velocity.x = 0
+		}
+	}
+	
+	if (meeting(0, velocity.y)) {
+		if (velocity.y > 0) {
+			move_contact(dir, velocity.y + 1, objBlock)
+			velocity.y = 0
+		}
+		else if (velocity.y < 0) {
+			move_contact(dir + 180, -velocity.y, objBlock)
+			velocity.y = 0
+		}
+	}
+	
+    var spd = new Kyh.Point(velocity.x, velocity.y)
     spd.add_dir(get_grav_direction())
     x += spd.x
     y += spd.y
 
     HandleMaxSpeed()
-    HandleCollisionWithBlock()
+    HandleSlope()
 }
 
 function HandleSprite() {
-	var notOnBlock = (place_free(x+pos(0, 1).x,y+pos(0, 1).y))
+	var notOnBlock = !place_meeting(x+pos(0, 1).x, y+pos(0, 1).y, objBlock)
 	if (!notOnBlock) { // Standing on something
 	    // Check if moving left/right
 	    var L = (scrButtonCheck(global.leftButton) || (DIRECTIONAL_TAP_FIX && scrButtonCheckPressed(global.leftButton)))
@@ -184,66 +285,18 @@ function HandleSprite() {
 	}
 }
 
-function HandleCollisionWithBlock() {
+function HandleSlope() {
     var dir = grav_direction.get_direction()
-    var hspd = abs(velocity.x)
-
-    if (place_meeting(x, y, objBlock)) {
-		if (velocity.y >= 0)
-			move_outside_solid(dir + 180, 3)
-		else {
-			move_outside_solid(dir, 16)
-			velocity.y = 2
+	
+    if (meeting(0, 0)) {
+		if (velocity.y >= 0) {
+			move_outside(dir + 180, maxHSpeed, objBlock)
 		}
-		
-		if (velocity.x > 0)
-			move_outside_solid(dir - 90, 3)
-		else if (velocity.x < 0)
-			move_outside_solid(dir + 90, 3)
     }
-
-    if (place_meeting(x+pos(0, 3).x, y+pos(0, 3).y, objBlock)) {
-		move_contact_solid(dir, 3)
-		velocity.y = 0
-    }
-    
-    if (place_meeting(x+pos(0, 1).x, y+pos(0, 1).y, objBlock)) {
-        is_jumping = false
-    }
+	
+	if (velocity.x != 0 && meeting(0, maxHSpeed + 1)) {
+		move_contact(dir, maxHSpeed + 1, objBlock)
+	}
+	
         
 }
-
-function raycast(offset_x, offset_y, dir, len=500) {
-	var src_x = floor(x) + pos(0, 8).x
-	var src_y = floor(y) + pos(0, 8).y
-	var dest_x
-	var dest_y
-	
-	var is_start = true
-	var is_over = false
-	
-	var gap = len
-	
-	while (true) {
-		dest_x = src_x + lengthdir_x(len, dir)
-		dest_y = src_y + lengthdir_y(len, dir)
-		var col = collision_line(src_x, src_y, dest_x, dest_y, objBlock, true, false)
-		
-		gap = gap / 2
-		if (gap < 0.5)
-			break
-		if (col == noone) {
-			if (is_start)
-				return noone
-			is_over = false
-			len += gap
-		}
-		else {
-			is_over = true
-			len -= gap
-		}
-		is_start = false
-	}
-	return new Point(dest_x, dest_y)
-}
-

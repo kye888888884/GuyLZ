@@ -6,7 +6,7 @@ function map_divide(map) {
     var result = array_create(point_number * 2, 0)
     for (var i = 0; i < point_number; i++) {
         var p1 = map[i]
-        var p2 = lerp_point(map[i], (i < point_number - 1) ? map[i + 1] : map[0], 0.5)
+        var p2 = Kyh.lerp_point(map[i], (i < point_number - 1) ? map[i + 1] : map[0], 0.5)
         result[i * 2] = p1
         result[i * 2 + 1] = p2
     }
@@ -21,9 +21,9 @@ function make_bezier_array(p1, p2, p3, dense=10) {
     var arr = []
     for (var i = 0; i < dense; i++) {
 		var w = i / dense
-        var p12 = lerp_point(p1, p2, w)
-        var p23 = lerp_point(p2, p3, w)
-        arr[i] = lerp_point(p12, p23, w)
+        var p12 = Kyh.lerp_point(p1, p2, w)
+        var p23 = Kyh.lerp_point(p2, p3, w)
+        arr[i] = Kyh.lerp_point(p12, p23, w)
     }
     return arr
 }
@@ -47,7 +47,7 @@ function map_to_bezier(arr_points, dense=10) {
 
     var curve_number = floor(point_number / 2)
     var line_number = dense * curve_number
-    var result = array_create(line_number, new Point(0, 0))
+    var result = array_create(line_number, new Kyh.Point(0, 0))
     var index = 0
     for (var i = 0; i < point_number - 1; i += 2) {
         var p1 = map[i]
@@ -64,7 +64,7 @@ function points_to_lines(arr_points) {
     var point_number = array_length(arr_points)
     var result = array_create(point_number - 1, 0)
     for (var i = 0; i < point_number - 1; i++) {
-        result[i] = new Line(arr_points[i], arr_points[i + 1])
+        result[i] = new Kyh.Line(arr_points[i], arr_points[i + 1])
     }
     return result
 }
@@ -82,12 +82,12 @@ function draw_polygon(arr_points, close=false) {
 	
 	draw_primitive_begin(pr_trianglelist)
 	while (array_length(indexes) > 2) {
-		var p1 = NewPoint(arr_points[indexes[0]])
-		var p2 = NewPoint(arr_points[indexes[1]])
-		var p3 = NewPoint(arr_points[indexes[2]])
-		var p12 = NewPoint(p2)
+		var p1 = Kyh.NewPoint(arr_points[indexes[0]])
+		var p2 = Kyh.NewPoint(arr_points[indexes[1]])
+		var p3 = Kyh.NewPoint(arr_points[indexes[2]])
+		var p12 = Kyh.NewPoint(p2)
 		p12.sub(p1)
-		var p13 = NewPoint(p3)
+		var p13 = Kyh.NewPoint(p3)
 		p13.sub(p1)
 		if (p12.cross(p13) >= 0) {
 			draw_vertex_color(p1.x, p1.y, c_white, 1)
@@ -107,9 +107,9 @@ function draw_polygon(arr_points, close=false) {
 var coords = [[200, 200], [600, 200], [600, 400], [200, 400]]
 
 // 2. Make points with coords
-map = array_create(array_length(coords), new Point(0, 0))
+map = array_create(array_length(coords), new Kyh.Point(0, 0))
 for (var i = 0; i < array_length(coords); i++)
-	map[i] = new Point(coords[i][0], coords[i][1])
+	map[i] = new Kyh.Point(coords[i][0], coords[i][1])
 
 // 3. Add point between each two points
 map = map_divide(map)
@@ -129,7 +129,7 @@ draw_clear_alpha(0, 0)
 draw_set_color(c_gray)
 for (var i = 0; i < array_length(lines); i++) {
     var line = lines[i]
-	line.draw()
+	line.draw(5)
 }
 surface_reset_target()
 
@@ -155,7 +155,7 @@ surface_reset_target()
 spr = sprite_create_from_surface(surf, 0, 0, room_width, room_height, true, false, 0, 0)
 sprite_index = spr
 
-var p = new Point(3, 4)
+var p = new Kyh.Point(3, 4)
 p.normalize()
 show_debug_message(p)
 
@@ -163,7 +163,7 @@ function get_line(_x, _y) {
 	var n = array_length(lines)
 	var min_distance = 99999
 	var min_index = 0
-	var p = new Point(_x, _y)
+	var p = new Kyh.Point(_x, _y)
 	for (var i = 0; i < n; i++) {
 		var distance = lines[i].center.distance_to(p)
 		if (min_distance > distance) {

@@ -1,7 +1,7 @@
 {
   "resourceType": "GMObject",
   "resourceVersion": "1.0",
-  "name": "objBullet",
+  "name": "objKyhBullet",
   "spriteId": {
     "name": "sprBullet",
     "path": "sprites/sprBullet/sprBullet.yy",
@@ -33,7 +33,7 @@
   "properties": [],
   "overriddenProperties": [],
   "parent": {
-    "name": "Player",
-    "path": "folders/Objects/Player.yy",
+    "name": "Kyh",
+    "path": "folders/Objects/Kyh.yy",
   },
 }
