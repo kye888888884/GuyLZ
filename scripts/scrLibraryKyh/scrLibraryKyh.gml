@@ -3,8 +3,12 @@ function Point(_x, _y) constructor {
 	x = _x
 	y = _y
 	function add(point) {
-		x += f
-		y += f
+		x += point.x
+		y += point.y
+	}
+	function sub(point) {
+		x -= point.x
+		y -= point.y
 	}
 	function multiply(f) {
 		x *= f
@@ -41,13 +45,33 @@ function Point(_x, _y) constructor {
 	function dot(point) {
 		return x * point.x + y * point.y
 	}
+	function cross(point) {
+		return x * point.y - y * point.x
+	}
+}
+
+function NewPoint(_p) {
+	return new Point(_p.x, _p.y)
+}
+
+function lerp_point(p1, p2, weight) {
+	var p = new Point(lerp(p1.x, p2.x, weight), lerp(p1.y, p2.y, weight))
+    return p
 }
 
 /// @function					Line(point1, point2)
 function Line(_p1, _p2) constructor {
     p1 = _p1
     p2 = _p2
+	center = lerp_point(p1, p2, 0.5)
     function draw(width = 3) {
         draw_line_width(p1.x, p1.y, p2.x, p2.y, width)
     }
+	function get_normal() {
+		var p = new Point(p2.x, p2.y)
+		p.sub(p1)
+		p.add_dir(90)
+		p.normalize()
+		return p
+	}
 }

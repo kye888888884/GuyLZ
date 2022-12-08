@@ -25,6 +25,7 @@ grav_direction = new Point(0, 1)
 
 jump = 8.5 // Sets how fast the player jumps
 jump2 = 7 // Sets how fast the player double jumps
+is_jumping = false
 
 djump = 1 // Allow the player to double jump as soon as he spawns
 maxHSpeed = 3 // Max horizontal speed
@@ -34,23 +35,32 @@ velocity = new Point(0, 0)
 xScale = 1 // Sets the direction the player is facing (1 is facing right, -1 is facing left)
 
 // Set the player's hitbox depending on gravity direction
-mask_index = sprPlayerMaskSlim
+mask_index = sprPlayerMask
 
-outsides = [270, 90, 0, 180]
+// Create map
+map = instance_create_depth(0, 0, 0, objMap)
+
+function get_grav_direction() {
+	return grav_direction.get_direction() - 270
+}
 
 function Jump() {
-    if (place_meeting(x,y+1,objBlock)) {
+    if (place_meeting(x+pos(0, 1).x,y+pos(0, 1).y,objBlock)) {
 	    // Single jump
 		velocity.y = -jump
-	    djump = 1
-	    audio_play_sound(sndJump,0,false)
+        //add_pos(0, -1)
+        is_jumping = true
+        djump = 1
+
+        audio_play_sound(sndJump,0,false)
 	} else if (djump == 1) {
 	    // Double jump
 		velocity.y = -jump2
 	    sprite_index = sprPlayerJump
-	    audio_play_sound(sndDJump,0,false)
-    
+        is_jumping = true
         djump -= 0
+
+        audio_play_sound(sndDJump,0,false)
 	}
 }
 function VJump() {
@@ -60,56 +70,31 @@ function VJump() {
 }
 function Shoot() {
     if (instance_number(objBullet) < 4) {
-	    instance_create_layer(x,y-2,layer,objBullet)
+	    var ins = instance_create_layer(x,y-2,layer,objBullet)
+		ins.speed = sign(image_xscale) * 16
+		ins.direction = get_grav_direction()
 	    audio_play_sound(sndShoot,0,false)
 	}
 }
 
+function pos(_x, _y) {
+	var p = new Point(_x, _y)
+	p.add_dir(get_grav_direction())
+	return p
+}
+
+function add_pos(_x, _y) {
+    x += pos(_x, _y).x
+    y += pos(_x, _y).y
+}
+
 function HandleGravity() {
 	if (keyboard_check(ord("A")))
-		grav_direction.add_dir(1)
-	velocity.x += grav_direction.x * grav_force
-	velocity.y += grav_direction.y * grav_force
-	image_angle = grav_direction.get_direction() - 270
-}
-function HandleMove() {
-	// Check left/right button presses
-	var L = (scrButtonCheck(global.leftButton) || (DIRECTIONAL_TAP_FIX and scrButtonCheckPressed(global.leftButton)))
-	var R = (scrButtonCheck(global.rightButton) || (DIRECTIONAL_TAP_FIX and scrButtonCheckPressed(global.rightButton)))
-
-	var h = 0 //Keeps track if the player is moving left/right
-
-	if (!frozen) { // Don't move if frozen
-	    if (R) {
-	        h = 1
-			image_xscale = h
-	    } else if (L) {
-	        h = -1
-			image_xscale = h
-		}
-	}
-
-	// Vine checks
-	var notOnBlock = (place_free(x,y+1))
-
-	if (h != 0) { // Player is moving
-	    xScale = h
-	
-		if ((h == -1) || (h == 1)) { // Make sure we're not moving off a vine (that's handled later)
-	        velocity.x = maxHSpeed * h
-		}
-	} else { // Player is not moving
-	    velocity.x = 0
-	}
-
-    var spd = new Point(velocity.x, velocity.y)
-    spd.add_dir(grav_direction.get_direction() - 270)
-    hspeed = spd.x
-    vspeed = spd.y
-}
-function HandleMoveEnd() {
-	//x += velocity.x
-    //y += velocity.y
+		grav_direction.add_dir(2)
+    if (keyboard_check(ord("D")))
+		grav_direction.add_dir(-2)
+	velocity.y += grav_force
+	image_angle = get_grav_direction()
 }
 function HandleMaxSpeed() {
 	// Check if moving faster vertically than max speed
@@ -132,8 +117,54 @@ function HandleActions() {
 	}
 }
 
+function HandleMove() {
+	HandleGravity()
+
+	// Check left/right button presses
+	var L = (scrButtonCheck(global.leftButton) || (DIRECTIONAL_TAP_FIX and scrButtonCheckPressed(global.leftButton)))
+	var R = (scrButtonCheck(global.rightButton) || (DIRECTIONAL_TAP_FIX and scrButtonCheckPressed(global.rightButton)))
+
+	var h = 0 //Keeps track if the player is moving left/right
+
+	if (!frozen) { // Don't move if frozen
+	    if (R) {
+	        h = 1
+			image_xscale = h
+	    } else if (L) {
+	        h = -1
+			image_xscale = h
+		}
+	}
+
+	// Vine checks
+	var notOnBlock = (place_free(x+pos(0, 1).x,y+pos(0, 1).y))
+
+	if (h != 0) { // Player is moving
+	    xScale = h
+	
+		if ((h == -1) || (h == 1)) { // Make sure we're not moving off a vine (that's handled later)
+	        velocity.x = maxHSpeed * h
+		}
+	} else { // Player is not moving
+	    velocity.x = 0
+	}
+
+    //if (place_meeting(x+pos(0, 1).x, y+pos(0, 1).y, objBlock))
+    //    velocity.y = 0
+
+    HandleActions()
+
+    var spd = new Point(velocity.x, velocity.y)
+    spd.add_dir(get_grav_direction())
+    x += spd.x
+    y += spd.y
+
+    HandleMaxSpeed()
+    HandleCollisionWithBlock()
+}
+
 function HandleSprite() {
-	var notOnBlock = (place_free(x,y+1))
+	var notOnBlock = (place_free(x+pos(0, 1).x,y+pos(0, 1).y))
 	if (!notOnBlock) { // Standing on something
 	    // Check if moving left/right
 	    var L = (scrButtonCheck(global.leftButton) || (DIRECTIONAL_TAP_FIX && scrButtonCheckPressed(global.leftButton)))
@@ -154,32 +185,65 @@ function HandleSprite() {
 }
 
 function HandleCollisionWithBlock() {
-	// Check for horizontal collisions
-	if (!place_free(x+hspeed,y)) {
-		if (hspeed <= 0) {
-			move_contact_solid(180,abs(hspeed))
-		} else {
-			move_contact_solid(0,abs(hspeed))
-		}
-        hspeed = 0
-		velocity.x = 0
-	}
+    var dir = grav_direction.get_direction()
+    var hspd = abs(velocity.x)
 
-	// Check for vertical collisions
-	if (!place_free(x,y+vspeed)) {
-		if(vspeed <= 0) {
-			move_contact_solid(90,abs(vspeed))
-		} else {
-			move_contact_solid(270,abs(vspeed))
-			djump = 1
+    if (place_meeting(x, y, objBlock)) {
+		if (velocity.y >= 0)
+			move_outside_solid(dir + 180, 3)
+		else {
+			move_outside_solid(dir, 16)
+			velocity.y = 2
 		}
-        vspeed = 0
-		velocity.y = 0
-	}
+		
+		if (velocity.x > 0)
+			move_outside_solid(dir - 90, 3)
+		else if (velocity.x < 0)
+			move_outside_solid(dir + 90, 3)
+    }
 
-	// Check for diagonal collisions
-	if (!place_free(x+hspeed,y+vspeed)) {
-        vspeed = 0
+    if (place_meeting(x+pos(0, 3).x, y+pos(0, 3).y, objBlock)) {
+		move_contact_solid(dir, 3)
 		velocity.y = 0
-	}
+    }
+    
+    if (place_meeting(x+pos(0, 1).x, y+pos(0, 1).y, objBlock)) {
+        is_jumping = false
+    }
+        
 }
+
+function raycast(offset_x, offset_y, dir, len=500) {
+	var src_x = floor(x) + pos(0, 8).x
+	var src_y = floor(y) + pos(0, 8).y
+	var dest_x
+	var dest_y
+	
+	var is_start = true
+	var is_over = false
+	
+	var gap = len
+	
+	while (true) {
+		dest_x = src_x + lengthdir_x(len, dir)
+		dest_y = src_y + lengthdir_y(len, dir)
+		var col = collision_line(src_x, src_y, dest_x, dest_y, objBlock, true, false)
+		
+		gap = gap / 2
+		if (gap < 0.5)
+			break
+		if (col == noone) {
+			if (is_start)
+				return noone
+			is_over = false
+			len += gap
+		}
+		else {
+			is_over = true
+			len -= gap
+		}
+		is_start = false
+	}
+	return new Point(dest_x, dest_y)
+}
+
