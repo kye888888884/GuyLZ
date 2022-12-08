@@ -93,17 +93,17 @@ Kyh = {
 	,
 	lerp_point: function (p1, p2, weight) {
 		var p = new Kyh.Point(lerp(p1.x, p2.x, weight), lerp(p1.y, p2.y, weight))
-	    return p
+		return p
 	}
 	,
 	/// @function					Line(point1, point2)
 	Line: function (_p1, _p2) constructor {
-	    p1 = _p1
-	    p2 = _p2
+		p1 = _p1
+		p2 = _p2
 		center = Kyh.lerp_point(p1, p2, 0.5)
-	    function draw(width = 3) {
-	        draw_line_width(p1.x, p1.y, p2.x, p2.y, width)
-	    }
+		function draw(width = 3) {
+		    draw_line_width(p1.x, p1.y, p2.x, p2.y, width)
+		}
 		function get_normal() {
 			var p = new Kyh.Point(p2.x, p2.y)
 			p.sub(p1)

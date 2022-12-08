@@ -174,13 +174,8 @@ function Shoot() {
 
 // Handle player
 function HandleGravity() {
-	if (keyboard_check(ord("A")))
-		grav_direction.add_dir(2)
-    if (keyboard_check(ord("D")))
-		grav_direction.add_dir(-2)
 	velocity.y += grav_force
-	//if (abs(image_angle - get_grav_direction()) > 1) 
-		image_angle = Kyh.stairs(get_grav_direction(), 5, -2.5)
+	image_angle = get_grav_direction()
 }
 function HandleMaxSpeed() {
 	// Check if moving faster vertically than max speed
@@ -234,7 +229,7 @@ function HandleMove() {
     HandleActions()
 	
 	var dir = grav_direction.get_direction()
-	if (meeting(velocity.x, 0) && meeting(velocity.x, -maxHSpeed)) {
+	if (meeting(velocity.x, 0) && meeting(velocity.x, -maxHSpeed) && velocity.y >= 0) {
 		if (velocity.x > 0) {
 			move_contact(dir + 90, velocity.x, objBlock)
 			velocity.x = 0
@@ -252,7 +247,6 @@ function HandleMove() {
 		}
 		else if (velocity.y < 0) {
 			move_contact(dir + 180, -velocity.y, objBlock)
-			velocity.y = 0
 		}
 	}
 	
@@ -290,14 +284,34 @@ function HandleSlope() {
     var dir = grav_direction.get_direction()
 	
     if (meeting(0, 0)) {
-		if (velocity.y >= 0) {
+		if (velocity.y < 0) {
+			move_outside(dir - 90, maxHSpeed, objBlock)
+			move_outside(dir + 90, maxHSpeed, objBlock)
+		}
+		else {
 			move_outside(dir + 180, maxHSpeed, objBlock)
 		}
     }
+	
+	if (meeting(0, -1)) {
+		if (velocity.y < 0)
+			velocity.y = 0
+	}
 	
 	if (velocity.x != 0 && meeting(0, maxHSpeed + 1)) {
 		move_contact(dir, maxHSpeed + 1, objBlock)
 	}
 	
         
+}
+
+function HandleDebug() {
+	if (keyboard_check(vk_tab)) {
+	    x = mouse_x
+	    y = mouse_y
+	}
+	if (keyboard_check(ord("A")))
+		grav_direction.add_dir(2)
+    if (keyboard_check(ord("D")))
+		grav_direction.add_dir(-2)
 }
