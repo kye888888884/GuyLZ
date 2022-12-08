@@ -162,10 +162,11 @@ function VJump() {
 	}
 }
 function Shoot() {
-    if (instance_number(objBullet) < 4) {
-	    var ins = instance_create_layer(x,y-2,layer,objBullet)
+    if (instance_number(objKyhBullet) < 4) {
+	    var ins = instance_create_layer(x,y-2,layer,objKyhBullet)
 		ins.speed = sign(image_xscale) * 16
 		ins.direction = get_grav_direction()
+		ins.image_angle = ins.direction
 	    audio_play_sound(sndShoot,0,false)
 	}
 }

@@ -82,6 +82,8 @@ function draw_polygon(arr_points, close=false) {
 	
 	draw_primitive_begin(pr_trianglelist)
 	while (array_length(indexes) > 2) {
+		show_debug_message(indexes)
+		draw_set_color(make_color_hsv(irandom(256), irandom_range(128, 256), irandom_range(128, 256)))
 		var p1 = Kyh.NewPoint(arr_points[indexes[0]])
 		var p2 = Kyh.NewPoint(arr_points[indexes[1]])
 		var p3 = Kyh.NewPoint(arr_points[indexes[2]])
@@ -89,22 +91,31 @@ function draw_polygon(arr_points, close=false) {
 		p12.sub(p1)
 		var p13 = Kyh.NewPoint(p3)
 		p13.sub(p1)
-		if (p12.cross(p13) >= 0) {
-			draw_vertex_color(p1.x, p1.y, c_white, 1)
-			draw_vertex_color(p2.x, p2.y, c_white, 1)
-			draw_vertex_color(p3.x, p3.y, c_white, 1)
+		show_debug_message("p12: (" + string(p12.x) + ", " + string(p12.y) + ")")
+		show_debug_message("p13: (" + string(p13.x) + ", " + string(p13.y) + ")")
+		var p12_in_line = Kyh.line_in_polygon(new Kyh.Line(p1, p2), arr_points, 10)
+			|| (indexes[0] + 1 == indexes[1])
+		var p13_in_line = Kyh.line_in_polygon(new Kyh.Line(p1, p3), arr_points, 10)
+		if (p12.cross(p13) >= 0 && p12_in_line && p13_in_line) {
+			draw_vertex(p1.x, p1.y)
+			draw_vertex(p2.x, p2.y)
+			draw_vertex(p3.x, p3.y)
 			array_delete(indexes, 1, 1)
 		}
 		else {
-			array_delete(indexes, 0, 1)
+			if (p12.cross(p13) > 0) {
+				indexes[0]--
+			}
+			else
+				array_delete(indexes, 0, 1)
 		}
-		show_debug_message(p12.cross(p13) >= 0)
 	}
 	draw_primitive_end()
+	draw_set_color(c_white)
 }
 
 // 1. Set coordinates
-var coords = [[200, 200], [600, 200], [600, 400], [200, 400]]
+var coords = [[200, 100], [350, 100], [350, 300], [450, 300], [450, 100], [600, 100], [600, 500], [200, 500]]
 
 // 2. Make points with coords
 map = array_create(array_length(coords), new Kyh.Point(0, 0))
@@ -140,7 +151,7 @@ draw_clear_alpha(0, 0)
 
 draw_set_color(c_white)
 
-draw_polygon(bezier)
+draw_polygon(bezier, false)
 
 //for (var i = 0; i < array_length(map); i++) {
 //	draw_circle_color(map[i].x, map[i].y, 5, c_red, c_red, false)

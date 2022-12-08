@@ -5,6 +5,33 @@ Kyh = {
 	stairs: function(value, step=1, offset=0) {
 		return ((value - offset) div step) * step
 	},
+	point_in_polygon: function(p, polygon) {
+		var crosses = 0
+		// https://bowbowbow.tistory.com/24
+		// For all lines of polygon
+		for (var i = 0; i < array_length(polygon); i++) {
+			var p1 = polygon[i]
+			var p2 = polygon[(i + 1) % array_length(polygon)]
+			// y of P is between y of P1 and y of P2
+			if ((p1.y > p.y) != (p2.y > p.y)) {
+				// Get point of intersection of P's right ray and segment of polygon
+				var atX = (p2.x - p1.x) * (p.y - p1.y) / (p2.y - p1.y) + p1.x
+				// If point of intersection is to the right of P, add 1 to the crosses
+				if (p.x < atX)
+					crosses++
+			}
+		}
+		return crosses % 2 == 1
+	},
+	line_in_polygon: function(line, polygon, dense=5) {
+		dense = max(dense, 2)
+		for (var i = 1; i < dense; i++) {
+			var p = Kyh.lerp_point(line.p1, line.p2, i / dense)
+			if (!Kyh.point_in_polygon(p, polygon))
+				return false
+		}
+		return true
+	},
 	
 	// Custom Classes
 	/// @function					Point(x, y)
@@ -51,6 +78,7 @@ Kyh = {
 		function distance_to(point) {
 			return point_distance(x, y, point.x, point.y)
 		}
+		// Vector functions
 		function dot(point) {
 			return x * point.x + y * point.y
 		}
@@ -83,6 +111,6 @@ Kyh = {
 			p.normalize()
 			return p
 		}
-	}
+	},
 
 }
