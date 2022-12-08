@@ -20,6 +20,7 @@
     {"id":{"name":"sprWater","path":"sprites/sprWater/sprWater.yy",},"order":7,},
     {"id":{"name":"objMap","path":"objects/objMap/objMap.yy",},"order":3,},
     {"id":{"name":"sprBlock","path":"sprites/sprBlock/sprBlock.yy",},"order":4,},
+    {"id":{"name":"shaLine","path":"shaders/shaLine/shaLine.yy",},"order":0,},
     {"id":{"name":"sndItem","path":"sounds/sndItem/sndItem.yy",},"order":6,},
     {"id":{"name":"Note1","path":"notes/Note1/Note1.yy",},"order":0,},
     {"id":{"name":"objBlock","path":"objects/objBlock/objBlock.yy",},"order":1,},

@@ -24,6 +24,7 @@ frozen = false // Sets if the player can move or not
 
 grav_force = 0.446
 grav_direction = new Kyh.Point(0, 1)
+grav_direction_to = new Kyh.Point(0, 1)
 
 jump = 8.5 // Sets how fast the player jumps
 jump2 = 7 // Sets how fast the player double jumps
@@ -34,6 +35,8 @@ maxHSpeed = 3 // Max horizontal speed
 maxVSpeed = 9 // Max vertical speed
 velocity = new Kyh.Point(0, 0)
 
+is_invert = false
+
 xScale = 1 // Sets the direction the player is facing (1 is facing right, -1 is facing left)
 
 // Set the player's hitbox depending on gravity direction
@@ -41,9 +44,6 @@ mask_index = sprPlayerMask
 
 // Create map
 map = instance_create_depth(0, 0, 0, objMap)
-
-// Relate with gravity
-pre_grav_direction = 270
 
 // Custom functions
 function get_grav_direction() {
@@ -138,7 +138,7 @@ function meeting(add_x, add_y) {
 
 // Actions
 function Jump() {
-    if (place_meeting(x+pos(0, 1).x,y+pos(0, 1).y,objBlock)) {
+    if (meeting(0, 1.5)) {
 	    // Single jump
 		velocity.y = -jump
         //add_pos(0, -1)
@@ -170,10 +170,20 @@ function Shoot() {
 	    audio_play_sound(sndShoot,0,false)
 	}
 }
-
+function Invert() {
+	if (meeting(0, 1)) {
+		is_invert = !is_invert
+		grav_direction.multiply(-1)
+		var pos_move = pos(0, 8)
+		pos_move.multiply(-2)
+		x += pos_move.x
+		y += pos_move.y
+	}
+}
 
 // Handle player
 function HandleGravity() {
+	grav_direction = Kyh.lerp_point(grav_direction, grav_direction_to, 0.4)
 	velocity.y += grav_force
 	image_angle = get_grav_direction()
 }
@@ -194,6 +204,9 @@ function HandleActions() {
 		}
 	    if (scrButtonCheckPressed(global.shootButton)) {
 	        Shoot()
+		}
+		if (keyboard_check_pressed(vk_space)) {
+			Invert()
 		}
 	}
 }
@@ -229,7 +242,7 @@ function HandleMove() {
     HandleActions()
 	
 	var dir = grav_direction.get_direction()
-	if (meeting(velocity.x, 0) && meeting(velocity.x, -maxHSpeed) && velocity.y >= 0) {
+	if (meeting(velocity.x, 0) && meeting(velocity.x, -maxHSpeed)) {
 		if (velocity.x > 0) {
 			move_contact(dir + 90, velocity.x, objBlock)
 			velocity.x = 0
@@ -247,6 +260,7 @@ function HandleMove() {
 		}
 		else if (velocity.y < 0) {
 			move_contact(dir + 180, -velocity.y, objBlock)
+			velocity.y = 0
 		}
 	}
 	
@@ -260,7 +274,7 @@ function HandleMove() {
 }
 
 function HandleSprite() {
-	var notOnBlock = !place_meeting(x+pos(0, 1).x, y+pos(0, 1).y, objBlock)
+	var notOnBlock = !meeting(0, 1)
 	if (!notOnBlock) { // Standing on something
 	    // Check if moving left/right
 	    var L = (scrButtonCheck(global.leftButton) || (DIRECTIONAL_TAP_FIX && scrButtonCheckPressed(global.leftButton)))
@@ -284,19 +298,8 @@ function HandleSlope() {
     var dir = grav_direction.get_direction()
 	
     if (meeting(0, 0)) {
-		if (velocity.y < 0) {
-			move_outside(dir - 90, maxHSpeed, objBlock)
-			move_outside(dir + 90, maxHSpeed, objBlock)
-		}
-		else {
-			move_outside(dir + 180, maxHSpeed, objBlock)
-		}
+		move_outside(dir + 180, maxHSpeed, objBlock)
     }
-	
-	if (meeting(0, -1)) {
-		if (velocity.y < 0)
-			velocity.y = 0
-	}
 	
 	if (velocity.x != 0 && meeting(0, maxHSpeed + 1)) {
 		move_contact(dir, maxHSpeed + 1, objBlock)

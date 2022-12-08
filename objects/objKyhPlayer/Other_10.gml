@@ -50,7 +50,7 @@ Kyh = {
 			x *= f
 			y *= f
 		}
-		function length() {
+		function get_length() {
 			return sqrt(x * x + y * y)
 		}
 		function get_direction() {
@@ -61,7 +61,7 @@ Kyh = {
 			y = lengthdir_y(len, dir)
 		}
 		function to(dir) {
-			var len = length()
+			var len = get_length()
 			x = lengthdir_x(len, dir)
 			y = lengthdir_y(len, dir)
 		}
@@ -69,7 +69,7 @@ Kyh = {
 			to(get_direction() + dir)
 		}
 		function normalize() {
-			var len = length()
+			var len = get_length()
 			if (len == 0)
 				return;
 			x *= 1 / len
@@ -77,6 +77,12 @@ Kyh = {
 		}
 		function distance_to(point) {
 			return point_distance(x, y, point.x, point.y)
+		}
+		function mirror(point) {
+			var p = Kyh.NewPoint(point)
+			p.multiply(2)
+			p.sub(new Kyh.Point(x, y))
+			return p
 		}
 		// Vector functions
 		function dot(point) {
@@ -103,6 +109,8 @@ Kyh = {
 		center = Kyh.lerp_point(p1, p2, 0.5)
 		function draw(width = 3) {
 		    draw_line_width(p1.x, p1.y, p2.x, p2.y, width)
+			draw_circle(p1.x, p1.y, width * 0.5, false)
+			draw_circle(p2.x, p2.y, width * 0.5, false)
 		}
 		function get_normal() {
 			var p = new Kyh.Point(p2.x, p2.y)
