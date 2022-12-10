@@ -100,8 +100,8 @@ function add_pos(_x, _y) {
     y += pos(_x, _y).y
 }
 function raycast(offset_x, offset_y, dir, len=500) {
-	var src_x = floor(x) + pos(0, 8).x
-	var src_y = floor(y) + pos(0, 8).y
+	var src_x = floor(x) + pos(offset_x, offset_y).x
+	var src_y = floor(y) + pos(offset_x, offset_y).y
 	var dest_x
 	var dest_y
 	
@@ -260,6 +260,8 @@ function HandleMove() {
 		}
 		else if (velocity.y < 0) {
 			move_contact(dir + 180, -velocity.y, objBlock)
+			x += pos(0, 1).x
+			y += pos(0, 1).y
 			velocity.y = 0
 		}
 	}

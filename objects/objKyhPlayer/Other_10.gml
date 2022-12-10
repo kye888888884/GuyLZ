@@ -50,6 +50,9 @@ Kyh = {
 			x *= f
 			y *= f
 		}
+		function equal(point) {
+			return (x == point.x) && (y == point.y)
+		}
 		function get_length() {
 			return sqrt(x * x + y * y)
 		}

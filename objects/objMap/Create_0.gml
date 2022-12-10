@@ -56,20 +56,25 @@ function map_to_bezier(arr_points, dense=10) {
         var p3 = map[i + 2]
 		var _dense = dense
 		
-		var len = p1.distance_to(p3)
-		var u = Kyh.NewPoint(p3)
-		u.sub(p1)
-		var PA = Kyh.NewPoint(p2)
-		PA.sub(p1)
+		if (p1.equal(p2) && p1.equal(p3))
+			_dense = 0
+		else {
+			var len = p1.distance_to(p3)
+			var u = Kyh.NewPoint(p3)
+			u.sub(p1)
+			var PA = Kyh.NewPoint(p2)
+			PA.sub(p1)
 		
-		var H = abs(u.cross(PA)) / u.get_length()
+			var H = abs(u.cross(PA)) / u.get_length()
 		
-		if (H == 0 || len == 0)
-			_dense = 1
-		else
-			_dense = floor(dense * (H * 0.01 + len * 0.005) + 1)
-		//show_debug_message("H: " + string(H) + " / L: " + string(len))
-		//show_debug_message(_dense)
+			if (H == 0 || len == 0)
+				_dense = max(1, floor(len / 32))
+			else
+				_dense = floor(dense * (H * 0.01 + len * 0.005) + 1)
+			//show_debug_message("H: " + string(H) + " / L: " + string(len))
+			//show_debug_message(_dense)
+		}
+		
 		rest += dense - _dense
 		
         var arr = make_bezier_array(p1, p2, p3, _dense)
@@ -132,72 +137,95 @@ function draw_polygon(arr_points) {
 	draw_set_color(c_white)
 }
 
-// 1. Set coordinates
-var coords = [[100, 100], [300, 100], [300, 300], [500, 300], [500, 100], [700, 100], [700, 300], [700, 500], [100, 500]]
+function make_map(map) {
+	// 1. Set coordinates
+	// coords = [[0, 0]]
+		
+	// 2. Make points with coords
+	//map = array_create(array_length(coords), new Kyh.Point(0, 0))
+	//for (var i = 0; i < array_length(coords); i++)
+	//	map[i] = new Kyh.Point(coords[i][0], coords[i][1])
 
-// 2. Make points with coords
-map = array_create(array_length(coords), new Kyh.Point(0, 0))
+	// 3. Add point between each two points
+	map = map_divide(map)
+
+	// 4. Make bezier's curve(array of points)
+	var bezier = map_to_bezier(map, 5)
+
+	// 5. Make line with curve
+	lines = points_to_lines(bezier, true)
+
+	// 6. Make surface with line
+	var surf = surface_create(room_width, room_height)
+	surface_set_target(surf)
+	draw_clear_alpha(0, 0)
+
+	draw_set_color(c_gray)
+	for (var i = 0; i < array_length(lines); i++) {
+	    var line = lines[i]
+		line.draw(5)
+	}
+	surface_reset_target()
+
+	var surf_fake_line = surface_create(room_width, room_height)
+	surface_set_target(surf_fake_line)
+	draw_clear_alpha(0, 0)
+
+	draw_set_color(0)
+	for (var i = 0; i < array_length(lines); i++) {
+	    var line = lines[i]
+		line.draw(6)
+	}
+	draw_set_color(-1)
+	surface_reset_target()
+	spr_fake_line = sprite_create_from_surface(surf_fake_line, 0, 0, room_width, room_height, false, false, 0, 0)
+
+	// 6+. Make background
+	var surf_bg = surface_create(room_width, room_height)
+	surface_set_target(surf_bg)
+	draw_clear_alpha(0, 0)
+
+	draw_set_color(c_white)
+
+	draw_polygon(bezier)
+
+	//for (var i = 0; i < array_length(map); i++) {
+	//	draw_circle_color(map[i].x, map[i].y, 5, c_red, c_red, false)
+	//}
+	array_foreach(bezier, function(e, i) {
+		draw_circle_color(e.x, e.y, 1, c_red, c_red, false)
+	})
+
+	surface_reset_target()
+	spr_bg = sprite_create_from_surface(surf_bg, 0, 0, room_width, room_height, true, false, 0, 0)
+
+	// 7. Make sprite from surface
+	spr = sprite_create_from_surface(surf, 0, 0, room_width, room_height, true, false, 0, 0)
+	sprite_index = spr
+}
+
+lines = []
+spr = noone
+spr_bg = noone
+spr_fake_line = noone
+
+var coords = [[100, 100],
+		[300, 100], 
+		[300, 300], 
+		[500, 300], 
+		[500, 300], 
+		[500, 100], 
+		[500, 100], 
+		[700, 100], 
+		[700, 300], 
+		[700, 500], 
+		[700, 500], 
+		[500, 500], 
+		[100, 500]]
+var map = array_create(array_length(coords), new Kyh.Point(0, 0))
 for (var i = 0; i < array_length(coords); i++)
 	map[i] = new Kyh.Point(coords[i][0], coords[i][1])
-
-// 3. Add point between each two points
-map = map_divide(map)
-
-// 4. Make bezier's curve(array of points)
-bezier = map_to_bezier(map, 4)
-
-// 5. Make line with curve
-lines = points_to_lines(bezier, true)
-
-// 6. Make surface with line
-var surf = surface_create(room_width, room_height)
-surface_set_target(surf)
-draw_clear_alpha(0, 0)
-
-draw_set_color(c_gray)
-for (var i = 0; i < array_length(lines); i++) {
-    var line = lines[i]
-	line.draw(2)
-}
-surface_reset_target()
-
-surf_fake_line = surface_create(room_width, room_height)
-surface_set_target(surf_fake_line)
-draw_clear_alpha(0, 0)
-
-draw_set_color(0)
-for (var i = 0; i < array_length(lines); i++) {
-    var line = lines[i]
-	line.draw(6)
-}
-draw_set_color(-1)
-surface_reset_target()
-
-// 6+. Make background
-surf_bg = surface_create(room_width, room_height)
-surface_set_target(surf_bg)
-draw_clear_alpha(0, 0)
-
-draw_set_color(c_white)
-
-draw_polygon(bezier)
-
-//for (var i = 0; i < array_length(map); i++) {
-//	draw_circle_color(map[i].x, map[i].y, 5, c_red, c_red, false)
-//}
-//array_foreach(map, function(e, i) {
-//	draw_circle_color(e.x, e.y, 5, c_red, c_red, false)
-//})
-
-surface_reset_target()
-
-// 7. Make sprite from surface
-spr = sprite_create_from_surface(surf, 0, 0, room_width, room_height, true, false, 0, 0)
-sprite_index = spr
-
-var p = new Kyh.Point(3, 4)
-p.normalize()
-show_debug_message(p)
+make_map(map)
 
 // Shader
 sha_time = shader_get_uniform(shaLine, "time")
