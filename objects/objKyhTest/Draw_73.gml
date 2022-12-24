@@ -38,7 +38,7 @@ array_foreach(points, function(e, i) {
 	var n = points[(i + 1) % array_length(points)]
 	draw_line(e.x, e.y, n.x, n.y)
 	draw_set_color(c_gray)
-	draw_text(e.x, e.y, i)
+	//draw_text(e.x, e.y, i)
 })
 draw_set_color(-1)
 draw_set_alpha(1)

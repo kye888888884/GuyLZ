@@ -1,4 +1,4 @@
 /// @description Handle player movement
 
-HandleMove()
+Step()
 HandleDebug()

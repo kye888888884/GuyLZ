@@ -1,6 +1,16 @@
 /// @description Insert description here
 // You can write your code in this editor
 
+#macro LINE_CHECK_DENSE 20
+/*
+  LINE_CHECK_DENSE is precision how densely lines of polygon check
+  whether the line is outside of entire polygon when draw polygon.
+  
+  If LINE_CHECK_DENSE is 100, map generator will check it dot by dot.
+  If LINE_CHECK_DENSE is 0, map generator don't check it.
+*/
+#macro GET_NEARST_LINE_MAX_DISTANCE 32
+
 function map_divide(map) {
     var point_number = array_length(map)
     var result = array_create(point_number * 2, 0)
@@ -95,6 +105,9 @@ function points_to_lines(arr_points, close=false) {
 }
 
 function draw_polygon(arr_points) {
+	/*
+	
+	*/
 	var n = array_length(arr_points)
 	var indexes = array_create(n, 0)
 	for (var i = 0; i < n; i++)
@@ -115,12 +128,15 @@ function draw_polygon(arr_points) {
 		p12.sub(p1)
 		var p13 = Kyh.NewPoint(p3)
 		p13.sub(p1)
-		//show_debug_message("p12: (" + string(p12.x) + ", " + string(p12.y) + ")")
-		//show_debug_message("p13: (" + string(p13.x) + ", " + string(p13.y) + ")")
+		
+		var line12 = new Kyh.Line(p1, p2)
+		var line13 = new Kyh.Line(p1, p3)
+		
 		var p12_in_line = (indexes[cur % len] + 1 == indexes[(cur + 1) % len]) 
-			|| Kyh.line_in_polygon(new Kyh.Line(p1, p2), arr_points, 10)
+			|| Kyh.line_in_polygon(line12, arr_points, line12.get_length() * (LINE_CHECK_DENSE / 100))
 		var p13_in_line = (indexes[cur % len] + 1 == indexes[(cur + 2) % len]) 
-			|| Kyh.line_in_polygon(new Kyh.Line(p1, p3), arr_points, 10)
+			|| Kyh.line_in_polygon(line13, arr_points, line13.get_length() * (LINE_CHECK_DENSE / 100))
+		
 		if (p12.cross(p13) >= 0 && p12_in_line && p13_in_line) {
 			draw_vertex(p1.x, p1.y)
 			draw_vertex(p2.x, p2.y)
@@ -232,17 +248,20 @@ sha_time = shader_get_uniform(shaLine, "time")
 sha_value = shader_get_uniform(shaLine, "value")
 sha_dense = shader_get_uniform(shaLine, "dense")
 
-function get_line(_x, _y) {
+function get_nearst_line(_x, _y) {
 	var n = array_length(lines)
 	var min_distance = 99999
-	var min_index = 0
+	var min_index = -1
 	var p = new Kyh.Point(_x, _y)
 	for (var i = 0; i < n; i++) {
 		var distance = lines[i].center.distance_to(p)
-		if (min_distance > distance) {
+		if (min_distance > distance && GET_NEARST_LINE_MAX_DISTANCE >= distance) {
 			min_distance = distance
 			min_index = i
 		}
+	}
+	if (min_index < 0) {
+		return noone
 	}
 	return lines[min_index]
 }

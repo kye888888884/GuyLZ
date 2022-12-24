@@ -8,7 +8,7 @@ shader_set_uniform_f(sha_value, 0.001)
 shader_set_uniform_f(sha_dense, 200.0)
 //draw_sprite(spr_fake_line, 0, 0, 0)
 shader_reset()
-//draw_self()
+draw_self()
 //draw_set_color(c_gray)
 //for (var i = 0; i < array_length(lines); i++) {
 //    var p = lines[i]

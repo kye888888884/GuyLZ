@@ -16,7 +16,6 @@ switch (tool) {
 				if (keyboard_check(vk_control)) {
 					select++
 					array_insert(points, select, new Kyh.Point(mx, my))
-					
 				}
 			}
 		}
@@ -43,13 +42,14 @@ switch (tool) {
 		else {
 			var min_dis = 16
 			var min_index = -1
-			array_foreach(spikes, function(e, i) {
+			for (var i = 0; i < array_length(spikes); i++) {
+				var e = spikes[i]
 				var dis = point_distance(e.x, e.y, mx, my)
 				if (min_dis > dis) {
 					min_dis = dis
 					min_index = i
 				}
-			})
+			}
 			select = min_index
 		}
 		break
@@ -69,12 +69,40 @@ if (mouse_check_button_pressed(mb_right)) {
 if (keyboard_check_pressed(ord("H")))
 	show_grid = !show_grid
 
-if (keyboard_check_pressed(ord("Q")))
-	tool = (tool - 1) % 3
-if (keyboard_check_pressed(ord("W")))
-	tool = (tool + 1) % 3
+if (keyboard_check_pressed(ord("1")))
+	tool = 0
+if (keyboard_check_pressed(ord("2")))
+	tool = 1
+if (keyboard_check_pressed(ord("3")))
+	tool = 2
 
 if (keyboard_check_pressed(vk_f5)) {
-	if (array_length(points) >= 3)
+	if (array_length(points) >= 3) {
+		// Write file
+		var _points = ds_map_create()
+		for (var i = 0; i < array_length(points); i++) {
+			ds_map_add(_points, string(i), floor(points[i].x) + floor(points[i].y) * 0.001)
+		}
+		ds_map_secure_save(_points, "points")
+		objMap.make_map(points)
+	}
+}
+
+if (keyboard_check_pressed(vk_f6)) {
+	var load = function() {
+		if (!file_exists("points"))
+			return false
+		var _points = ds_map_secure_load("points")
+		points = array_create(ds_map_size(_points), noone)
+		for (var i = 0; i < ds_map_size(_points); i++) {
+			var temp = ds_map_find_value(_points, string(i))
+			show_debug_message(temp)
+			var p = new Kyh.Point(floor(temp), frac(temp) * 1000)
+			points[i] = p
+		}
+		return true
+		
+	}
+	if (load())
 		objMap.make_map(points)
 }

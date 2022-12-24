@@ -1,4 +1,4 @@
-/// @description my function
+/// @description global library
 globalvar Kyh;
 Kyh = {
 	// Math Functions
@@ -54,7 +54,7 @@ Kyh = {
 			return (x == point.x) && (y == point.y)
 		}
 		function get_length() {
-			return sqrt(x * x + y * y)
+			return point_distance(0, 0, x, y)
 		}
 		function get_direction() {
 			return point_direction(0, 0, x, y)
@@ -80,6 +80,16 @@ Kyh = {
 		}
 		function distance_to(point) {
 			return point_distance(x, y, point.x, point.y)
+		}
+		function distance_on_direction(_point, _dir) {
+			var p = Kyh.NewPoint(_point)
+			p.sub(new Kyh.Point(x, y))
+			
+			var dir = Kyh.NewPoint(_dir)
+			dir.add_dir(90)
+			if (dir.get_length() == 0)
+				return -1
+			return abs(p.cross(dir)) / dir.get_length()
 		}
 		function mirror(point) {
 			var p = Kyh.NewPoint(point)
@@ -115,13 +125,24 @@ Kyh = {
 			draw_circle(p1.x, p1.y, width * 0.5, false)
 			draw_circle(p2.x, p2.y, width * 0.5, false)
 		}
+		function get_direction() {
+			var p = Kyh.NewPoint(p2)
+			p.sub(p1)
+			return p
+		}
 		function get_normal() {
-			var p = new Kyh.Point(p2.x, p2.y)
+			var p = Kyh.NewPoint(p2)
 			p.sub(p1)
 			p.add_dir(90)
 			p.normalize()
 			return p
 		}
+		function get_length() {
+			return p1.distance_to(p2)
+		}
 	},
-
+	ds_grid_add_row: function(_grid) {
+		ds_grid_resize(_grid, ds_grid_width(_grid), ds_grid_height(_grid) + 1)
+		return ds_grid_height(_grid) - 1
+	}
 }

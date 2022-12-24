@@ -1,5 +1,11 @@
 /// @description Initialize variables
 
+// Define
+#macro PLAYER_SIZE 10
+#macro CAN_CLIMB 1 // Slope of the block that player can climb to the maximum
+#macro MIN_LEAN_DOT 0.71
+
+// Load global library 
 event_user(0)
 
 #region Remove this please when import your project
@@ -20,6 +26,7 @@ function scrButtonCheckReleased(key) {
 }
 #endregion
 
+// Properties
 frozen = false // Sets if the player can move or not
 
 grav_force = 0.446
@@ -45,174 +52,41 @@ mask_index = sprPlayerMask
 // Create map
 map = instance_create_depth(0, 0, 0, objMap)
 
-// Custom functions
-function get_grav_direction() {
-	return grav_direction.get_direction() - 270
-}
-function move_outside(dir, dis, obj, move_anyway=false) {
-	var cur = 0
-	var xx, yy
-	while (cur <= dis) {
-		xx = x + lengthdir_x(cur, dir)
-		yy = y + lengthdir_y(cur, dir)
-			
-		if (!place_meeting(xx, yy, obj)) {
-			x = xx
-			y = yy
-			cur = dis
-		}
-		
-		cur++
-	}
-	if (move_anyway) {
-		x = xx
-		y = yy
-	}
-}
-function move_contact(dir, dis, obj, move_anyway=false) {
-	var cur = 0
-	var xx, yy
-	while (cur <= dis) {
-		xx = x + lengthdir_x(cur, dir)
-		yy = y + lengthdir_y(cur, dir)
-			
-		if (place_meeting(xx, yy, obj)) {
-			cur--
-			x = x + lengthdir_x(cur, dir)
-			y = y + lengthdir_y(cur, dir)
-			cur = dis
-		}
-		
-		cur++
-	}
-	if (move_anyway) {
-		x = xx
-		y = yy
-	}
-}
-function pos(_x, _y) {
-	var p = new Kyh.Point(_x, _y)
-	p.add_dir(get_grav_direction())
-	return p
-}
-function add_pos(_x, _y) {
-    x += pos(_x, _y).x
-    y += pos(_x, _y).y
-}
-function raycast(offset_x, offset_y, dir, len=500) {
-	var src_x = floor(x) + pos(offset_x, offset_y).x
-	var src_y = floor(y) + pos(offset_x, offset_y).y
-	var dest_x
-	var dest_y
-	
-	var is_start = true
-	var is_over = false
-	
-	var gap = len
-	
-	while (true) {
-		dest_x = src_x + lengthdir_x(len, dir)
-		dest_y = src_y + lengthdir_y(len, dir)
-		var col = collision_line(src_x, src_y, dest_x, dest_y, objBlock, true, false)
-		
-		gap = gap / 2
-		if (gap < 0.5)
-			break
-		if (col == noone) {
-			if (is_start)
-				return noone
-			is_over = false
-			len += gap
-		}
-		else {
-			is_over = true
-			len -= gap
-		}
-		is_start = false
-	}
-	return new Kyh.Point(dest_x, dest_y)
-}
-function meeting(add_x, add_y) {
-	return place_meeting(x+pos(add_x, add_y).x, y+pos(add_x, add_y).y, objBlock)
-}
+// For changing gravity
+r1 = noone
+r2 = noone
+r3 = noone
+floor_normal = new Kyh.Point(0, 1)
+floor_distance = 0
 
-// Actions
-function Jump() {
-    if (meeting(0, 1.5)) {
-	    // Single jump
-		velocity.y = -jump
-        //add_pos(0, -1)
-        is_jumping = true
-        djump = 1
+// For sliping
+slip = false
 
-        audio_play_sound(sndJump,0,false)
-	} else if (djump == 1) {
-	    // Double jump
-		velocity.y = -jump2
-	    sprite_index = sprPlayerJump
-        is_jumping = true
-        djump -= 0
-
-        audio_play_sound(sndDJump,0,false)
-	}
-}
-function VJump() {
-    if (velocity.y < 0) {
-	    velocity.y *= 0.45
-	}
-}
-function Shoot() {
-    if (instance_number(objKyhBullet) < 4) {
-	    var ins = instance_create_layer(x,y-2,layer,objKyhBullet)
-		ins.speed = sign(image_xscale) * 16
-		ins.direction = get_grav_direction()
-		ins.image_angle = ins.direction
-	    audio_play_sound(sndShoot,0,false)
-	}
-}
-function Invert() {
-	if (meeting(0, 1)) {
-		is_invert = !is_invert
-		grav_direction.multiply(-1)
-		var pos_move = pos(0, 8)
-		pos_move.multiply(-2)
-		x += pos_move.x
-		y += pos_move.y
-	}
-}
+// Load local library
+event_user(1)
+// Load actions
+event_user(2)
 
 // Handle player
-function HandleGravity() {
-	grav_direction = Kyh.lerp_point(grav_direction, grav_direction_to, 0.4)
-	velocity.y += grav_force
-	image_angle = get_grav_direction()
-}
-function HandleMaxSpeed() {
-	// Check if moving faster vertically than max speed
-	if (abs(velocity.y) > maxVSpeed) {
-		velocity.y = sign(velocity.y) * maxVSpeed
-	}
-}
-function HandleActions() {
-	// Check buttons for player actions
-	if (!frozen) { // Check if frozen before doing anything
-	    if (scrButtonCheckPressed(global.jumpButton)) {
-	        Jump()
-		}
-	    if (scrButtonCheckReleased(global.jumpButton)) {
-	        VJump()
-		}
-	    if (scrButtonCheckPressed(global.shootButton)) {
-	        Shoot()
-		}
-		if (keyboard_check_pressed(vk_space)) {
-			Invert()
-		}
-	}
-}
-function HandleMove() {
-	HandleGravity()
+function Step() {
+	HandleMovement()
 
+	slip = false
+	HandleGravityDirection()
+	HandleGravity()
+	if (slip)
+		show_debug_message("slip" + string(irandom(100)))
+	
+	HandleCollisionWithBlock()
+	HandleMaxSpeed()
+	HandlePosition()
+    HandleSlope()
+	
+	HandleActions()
+	HandleSprite()
+}
+
+function HandleMovement() {
 	// Check left/right button presses
 	var L = (scrButtonCheck(global.leftButton) || (DIRECTIONAL_TAP_FIX and scrButtonCheckPressed(global.leftButton)))
 	var R = (scrButtonCheck(global.rightButton) || (DIRECTIONAL_TAP_FIX and scrButtonCheckPressed(global.rightButton)))
@@ -238,46 +112,165 @@ function HandleMove() {
 	} else { // Player is not moving
 	    velocity.x = 0
 	}
-
-    HandleActions()
 	
+	if (meeting(0, 1) && !slip)
+		djump = 1
+}
+function HandleGravityDirection() {
+	var ray_dir = grav_direction.get_direction()
+	var W = PLAYER_SIZE / 2
+	r1 = raycast(-W, 8, ray_dir, 320)
+	r2 = raycast(W, 8, ray_dir, 320)
+	r3 = raycast(0, 8, ray_dir, 320)
+	if (r1 != noone && r2 != noone && r3 != noone) {
+		var dis = r1.dest.distance_on_direction(r2.dest, grav_direction)
+		
+		show_debug_message("dis1: " + string(r1.dis))
+		show_debug_message("dis2: " + string(r2.dis))
+		show_debug_message("dis3: " + string(r3.dis))
+		
+		var nearst_line = noone;
+		if (abs(r1.dis - r3.dis) < 1 && abs(r2.dis - r3.dis) < 1)
+			nearst_line = map.get_nearst_line(r3.dest.x, r3.dest.y)
+		else if (r1.dis < r2.dis)
+			nearst_line = map.get_nearst_line(r1.dest.x, r1.dest.y)
+		else
+			nearst_line = map.get_nearst_line(r2.dest.x, r2.dest.y)
+		
+		if (nearst_line == noone)
+			return;
+			
+		floor_distance = max(r1.dis, r2.dis, r3.dis)
+		
+		var normal, lean_dot
+		if (nearst_line != noone) {
+			var normal = nearst_line.get_normal()
+			if (is_invert)
+				normal.multiply(-1)
+			floor_normal = normal
+			floor_direction = normal.cross(grav_direction)
+			
+			lean_dot = normal.dot(grav_direction)
+			show_debug_message("lean: " + string(lean_dot))
+		}
+		
+		if (nearst_line != noone) {
+			if (lean_dot < MIN_LEAN_DOT) {
+				slip = true
+				return;
+			}
+			
+			if (dis < 1)
+				return;
+		
+			if (r1.dis + 1 < r3.dis && r2.dis + 1 < r3.dis) 
+				return;
+			
+			grav_direction_to = normal
+			return;
+		}
+	}
+	floor_normal = noone
+}
+function HandleGravity() {
+	grav_direction = Kyh.lerp_point(grav_direction, grav_direction_to, 0.3)
+	velocity.y += grav_force
+	image_angle = get_grav_direction()
+}
+function HandleCollisionWithBlock() {
 	var dir = grav_direction.get_direction()
-	if (meeting(velocity.x, 0) && meeting(velocity.x, -maxHSpeed)) {
+	if (meeting(velocity.x, 0) && meeting(velocity.x, -maxHSpeed * CAN_CLIMB)) {
 		if (velocity.x > 0) {
-			move_contact(dir + 90, velocity.x, objBlock)
+			move_contact(dir + 90, velocity.x, objOGBlock)
 			velocity.x = 0
 		}
 		else if (velocity.x < 0) {
-			move_contact(dir - 90, -velocity.x, objBlock)
+			move_contact(dir - 90, -velocity.x, objOGBlock)
 			velocity.x = 0
 		}
 	}
 	
 	if (meeting(0, velocity.y)) {
 		if (velocity.y > 0) {
-			move_contact(dir, velocity.y + 1, objBlock)
-			velocity.y = 0
+			if (!slip) {
+				move_contact(dir, velocity.y + 1, objOGBlock)
+				velocity.y = 0
+			}
 		}
 		else if (velocity.y < 0) {
-			move_contact(dir + 180, -velocity.y, objBlock)
-			x += pos(0, 1).x
-			y += pos(0, 1).y
+			//move_contact(dir + 180, -velocity.y, objOGBlock)
+			move_outside(dir, -velocity.y, objOGBlock)
+			//x += pos(0, 1).x
+			//y += pos(0, 1).y
 			velocity.y = 0
 		}
 	}
+}
+function HandleMaxSpeed() {
+	// Check if moving faster vertically than max speed
+	if (abs(velocity.y) > maxVSpeed) {
+		velocity.y = sign(velocity.y) * maxVSpeed
+	}
+}
+function HandlePosition() {
+	var spd = new Kyh.Point(velocity.x, velocity.y)
+	show_debug_message("spd: (" + string(spd.x) + ", " + string(spd.y) + ")")
+	spd.add_dir(get_grav_direction())
+	x += spd.x
+	y += spd.y
+}
+function HandleSlope() {
+    var dir = grav_direction.get_direction()
 	
-    var spd = new Kyh.Point(velocity.x, velocity.y)
-    spd.add_dir(get_grav_direction())
-    x += spd.x
-    y += spd.y
-
-    HandleMaxSpeed()
-    HandleSlope()
+	if (slip) {
+		var is_floor = floor_distance < velocity.y
+		show_debug_message("floor: " + string(floor_direction))
+		show_debug_message("floor_dis: " + string(floor_distance))
+		if (floor_direction < 0) { // slip to right
+			if (is_floor) {
+				move_outside(dir + 135, velocity.y * 1.4, objOGBlock)
+				move_contact(dir - 90, velocity.y, objOGBlock)
+			}
+			move_outside(dir + 90, velocity.y, objOGBlock)
+		}
+		else {
+			if (is_floor) {
+				move_outside(dir - 135, velocity.y * 1.4, objOGBlock)
+				move_contact(dir + 90, velocity.y, objOGBlock)
+			}
+			move_outside(dir - 90, velocity.y, objOGBlock)
+		}
+	}
+	
+    if (meeting(0, 0) && velocity.y >= 0) {
+		move_outside(dir + 180, velocity.y + 1, objOGBlock, true)
+    }
+	
+	if (velocity.x != 0 && meeting(0, maxHSpeed + 1)) {
+		move_contact(dir, maxHSpeed + 1, objOGBlock)
+	}    
 }
 
+function HandleActions() {
+	// Check buttons for player actions
+	if (!frozen) { // Check if frozen before doing anything
+	    if (scrButtonCheckPressed(global.jumpButton)) {
+	        Jump()
+		}
+	    if (scrButtonCheckReleased(global.jumpButton)) {
+	        VJump()
+		}
+	    if (scrButtonCheckPressed(global.shootButton)) {
+	        Shoot()
+		}
+		if (keyboard_check_pressed(vk_space)) {
+			Invert()
+		}
+	}
+}
 function HandleSprite() {
 	var notOnBlock = !meeting(0, 1)
-	if (!notOnBlock) { // Standing on something
+	if (!notOnBlock && !slip) { // Standing on something
 	    // Check if moving left/right
 	    var L = (scrButtonCheck(global.leftButton) || (DIRECTIONAL_TAP_FIX && scrButtonCheckPressed(global.leftButton)))
 	    var R = (scrButtonCheck(global.rightButton) || (DIRECTIONAL_TAP_FIX && scrButtonCheckPressed(global.rightButton)))
@@ -288,7 +281,7 @@ function HandleSprite() {
 	        sprite_index = sprPlayerIdle
 	    }
 	} else { // In the air
-	    if ((velocity.y) < 0) {
+	    if (velocity.y < 0) {
 	        sprite_index = sprPlayerJump
 	    } else {
 	        sprite_index = sprPlayerFall
@@ -296,27 +289,20 @@ function HandleSprite() {
 	}
 }
 
-function HandleSlope() {
-    var dir = grav_direction.get_direction()
-	
-    if (meeting(0, 0)) {
-		move_outside(dir + 180, maxHSpeed, objBlock)
-    }
-	
-	if (velocity.x != 0 && meeting(0, maxHSpeed + 1)) {
-		move_contact(dir, maxHSpeed + 1, objBlock)
-	}
-	
-        
-}
-
 function HandleDebug() {
 	if (keyboard_check(vk_tab)) {
 	    x = mouse_x
 	    y = mouse_y
 	}
+	
+	var add = 0
 	if (keyboard_check(ord("A")))
-		grav_direction.add_dir(2)
+		add = 2
     if (keyboard_check(ord("D")))
-		grav_direction.add_dir(-2)
+		add = -2
+	
+	if (add != 0) {
+		grav_direction.add_dir(add)
+		grav_direction_to.add_dir(add)
+	}
 }
