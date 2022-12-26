@@ -1,7 +1,7 @@
 /// @description Insert description here
 // You can write your code in this editor
-mx = Kyh.stairs(mouse_x, grid, -grid * 0.5)
-my = Kyh.stairs(mouse_y, grid, -grid * 0.5)
+mx = OG.stairs(mouse_x, grid, -grid * 0.5)
+my = OG.stairs(mouse_y, grid, -grid * 0.5)
 
 switch (tool) {
 	case 0:
@@ -10,18 +10,18 @@ switch (tool) {
 				return (e.x == mx) && (e.y == my)
 			})
 			if (idx == -1)
-				array_push(points, new Kyh.Point(mx, my))
+				array_push(points, new OG.Point(mx, my))
 			else {
 				select = idx
 				if (keyboard_check(vk_control)) {
 					select++
-					array_insert(points, select, new Kyh.Point(mx, my))
+					array_insert(points, select, new OG.Point(mx, my))
 				}
 			}
 		}
 		else if (mouse_check_button(mb_left)) {
 			if (select != -1) {
-				points[select] = new Kyh.Point(mx, my)
+				points[select] = new OG.Point(mx, my)
 			}
 		}
 		else if (mouse_check_button_released(mb_left)) {
@@ -97,7 +97,7 @@ if (keyboard_check_pressed(vk_f6)) {
 		for (var i = 0; i < ds_map_size(_points); i++) {
 			var temp = ds_map_find_value(_points, string(i))
 			show_debug_message(temp)
-			var p = new Kyh.Point(floor(temp), frac(temp) * 1000)
+			var p = new OG.Point(floor(temp), frac(temp) * 1000)
 			points[i] = p
 		}
 		return true

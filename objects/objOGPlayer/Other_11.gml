@@ -51,7 +51,7 @@ function move_contact(dir, dis, obj, move_anyway=false) {
 	}
 }
 function pos(_x, _y, _dir=0) {
-	var p = new Kyh.Point(_x, _y)
+	var p = new OG.Point(_x, _y)
 	p.add_dir(get_grav_direction() + _dir)
 	return p
 }
@@ -73,7 +73,7 @@ function raycast(offset_x, offset_y, dir, len=500) {
 	while (true) {
 		dest_x = src_x + lengthdir_x(len, dir)
 		dest_y = src_y + lengthdir_y(len, dir)
-		var col = collision_line(src_x, src_y, dest_x, dest_y, objBlock, true, false)
+		var col = collision_line(src_x, src_y, dest_x, dest_y, objOGBlock, true, false)
 		
 		gap = gap / 2
 		if (gap < 0.5)
@@ -91,11 +91,11 @@ function raycast(offset_x, offset_y, dir, len=500) {
 		is_start = false
 	}
 	return {
-		src: new Kyh.Point(src_x, src_y),
-		dest: new Kyh.Point(dest_x, dest_y), 
+		src: new OG.Point(src_x, src_y),
+		dest: new OG.Point(dest_x, dest_y), 
 		dis: point_distance(src_x, src_y, dest_x, dest_y)
 	}
 }
 function meeting(add_x, add_y) {
-	return place_meeting(x+pos(add_x, add_y).x, y+pos(add_x, add_y).y, objBlock)
+	return place_meeting(x+pos(add_x, add_y).x, y+pos(add_x, add_y).y, objOGBlock)
 }

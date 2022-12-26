@@ -1,7 +1,7 @@
 {
   "resourceType": "GMObject",
   "resourceVersion": "1.0",
-  "name": "objKyhTest",
+  "name": "objOGTest",
   "spriteId": null,
   "solid": false,
   "visible": true,

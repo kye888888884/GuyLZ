@@ -1,7 +1,7 @@
 {
   "resourceType": "GMObject",
   "resourceVersion": "1.0",
-  "name": "objKyhPlayer",
+  "name": "objOGPlayer",
   "spriteId": {
     "name": "sprPlayerIdle",
     "path": "sprites/sprPlayerIdle/sprPlayerIdle.yy",

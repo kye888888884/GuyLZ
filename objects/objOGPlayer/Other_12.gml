@@ -23,8 +23,8 @@ function VJump() {
 	}
 }
 function Shoot() {
-    if (instance_number(objKyhBullet) < 4) {
-	    var ins = instance_create_layer(x,y-2,layer,objKyhBullet)
+    if (instance_number(objOGBullet) < 4) {
+	    var ins = instance_create_layer(x,y-2,layer,objOGBullet)
 		ins.speed = sign(image_xscale) * 16
 		ins.direction = get_grav_direction()
 		ins.image_angle = ins.direction
@@ -35,11 +35,12 @@ function Invert() {
 	if (meeting(0, 1)) {
 		is_invert = !is_invert
 		grav_direction.multiply(-1)
+		grav_direction_to.multiply(-1)
 		var pos_move = pos(0, 12)
 		pos_move.multiply(-2)
 		x += pos_move.x
 		y += pos_move.y
-		move_contact(grav_direction.get_direction(), 10, objBlock)
+		move_contact(grav_direction.get_direction(), 10, objOGBlock)
 	}
 }
 

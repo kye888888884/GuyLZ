@@ -47,4 +47,4 @@ array_foreach(spikes, function(e, i) {
 	e.draw()
 })
 
-draw_sprite(sprKyhIcon, tool, 16, 16)
+draw_sprite(sprOGIcon, tool, 16, 16)

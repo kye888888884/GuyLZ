@@ -22,6 +22,3 @@ if (r3 != noone) {
 	draw_text(16, 80, "r3: (" + string(r3.dest.x) + ", " + string(r3.dest.y) + ")")
 }
 draw_set_color(-1)
-if (floor_normal != noone)
-	draw_text(16, 112, "floor: (" + string(floor_normal.x) + ", " + string(floor_normal.y) + ")")
-draw_set_color(-1)

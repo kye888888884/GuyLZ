@@ -1,9 +1,11 @@
 /// @description Initialize variables
 
 // Define
-#macro PLAYER_SIZE 10
+#macro PLAYER_SIZE 10 // Width of player
 #macro CAN_CLIMB 1 // Slope of the block that player can climb to the maximum
-#macro MIN_LEAN_DOT 0.71
+#macro MIN_SLIP_DOT 0.70 // minimum of dot value to make player to slip. 0.71 is slightly smaller than cos(45˚)
+#macro MIN_LEAN_DOT 0.85 // minimum of dot value to make player to lean. 0.85 ~= cos(30˚)
+#macro MIN_FLOOR_DISTANCE 180
 
 // Load global library 
 event_user(0)
@@ -30,8 +32,8 @@ function scrButtonCheckReleased(key) {
 frozen = false // Sets if the player can move or not
 
 grav_force = 0.446
-grav_direction = new Kyh.Point(0, 1)
-grav_direction_to = new Kyh.Point(0, 1)
+grav_direction = new OG.Point(0, 1)
+grav_direction_to = new OG.Point(0, 1)
 
 jump = 8.5 // Sets how fast the player jumps
 jump2 = 7 // Sets how fast the player double jumps
@@ -40,7 +42,7 @@ is_jumping = false
 djump = 1 // Allow the player to double jump as soon as he spawns
 maxHSpeed = 3 // Max horizontal speed
 maxVSpeed = 9 // Max vertical speed
-velocity = new Kyh.Point(0, 0)
+velocity = new OG.Point(0, 0)
 
 is_invert = false
 
@@ -50,13 +52,12 @@ xScale = 1 // Sets the direction the player is facing (1 is facing right, -1 is 
 mask_index = sprPlayerMask
 
 // Create map
-map = instance_create_depth(0, 0, 0, objMap)
+//map = instance_create_depth(0, 0, 0, objMap)
 
 // For changing gravity
 r1 = noone
 r2 = noone
 r3 = noone
-floor_normal = new Kyh.Point(0, 1)
 floor_distance = 0
 
 // For sliping
@@ -119,9 +120,9 @@ function HandleMovement() {
 function HandleGravityDirection() {
 	var ray_dir = grav_direction.get_direction()
 	var W = PLAYER_SIZE / 2
-	r1 = raycast(-W, 8, ray_dir, 320)
-	r2 = raycast(W, 8, ray_dir, 320)
-	r3 = raycast(0, 8, ray_dir, 320)
+	r1 = raycast(-W, 8, ray_dir, MIN_FLOOR_DISTANCE)
+	r2 = raycast(W, 8, ray_dir, MIN_FLOOR_DISTANCE)
+	r3 = raycast(0, 8, ray_dir, MIN_FLOOR_DISTANCE)
 	if (r1 != noone && r2 != noone && r3 != noone) {
 		var dis = r1.dest.distance_on_direction(r2.dest, grav_direction)
 		
@@ -131,11 +132,11 @@ function HandleGravityDirection() {
 		
 		var nearst_line = noone;
 		if (abs(r1.dis - r3.dis) < 1 && abs(r2.dis - r3.dis) < 1)
-			nearst_line = map.get_nearst_line(r3.dest.x, r3.dest.y)
+			nearst_line = objOGManager.get_nearst_line(r3.dest.x, r3.dest.y)
 		else if (r1.dis < r2.dis)
-			nearst_line = map.get_nearst_line(r1.dest.x, r1.dest.y)
+			nearst_line = objOGManager.get_nearst_line(r1.dest.x, r1.dest.y)
 		else
-			nearst_line = map.get_nearst_line(r2.dest.x, r2.dest.y)
+			nearst_line = objOGManager.get_nearst_line(r2.dest.x, r2.dest.y)
 		
 		if (nearst_line == noone)
 			return;
@@ -145,17 +146,19 @@ function HandleGravityDirection() {
 		var normal, lean_dot
 		if (nearst_line != noone) {
 			var normal = nearst_line.get_normal()
-			if (is_invert)
-				normal.multiply(-1)
-			floor_normal = normal
 			floor_direction = normal.cross(grav_direction)
 			
 			lean_dot = normal.dot(grav_direction)
+			if (lean_dot < 0) {
+				lean_dot *= -1
+				normal.multiply(-1)
+				floor_direction *= -1
+			}
 			show_debug_message("lean: " + string(lean_dot))
 		}
 		
 		if (nearst_line != noone) {
-			if (lean_dot < MIN_LEAN_DOT) {
+			if (lean_dot < MIN_SLIP_DOT) {
 				slip = true
 				return;
 			}
@@ -166,14 +169,16 @@ function HandleGravityDirection() {
 			if (r1.dis + 1 < r3.dis && r2.dis + 1 < r3.dis) 
 				return;
 			
+			if (lean_dot < MIN_LEAN_DOT)
+				return;
+			
 			grav_direction_to = normal
 			return;
 		}
 	}
-	floor_normal = noone
 }
 function HandleGravity() {
-	grav_direction = Kyh.lerp_point(grav_direction, grav_direction_to, 0.3)
+	grav_direction = OG.lerp_point(grav_direction, grav_direction_to, 0.3)
 	velocity.y += grav_force
 	image_angle = get_grav_direction()
 }
@@ -198,10 +203,7 @@ function HandleCollisionWithBlock() {
 			}
 		}
 		else if (velocity.y < 0) {
-			//move_contact(dir + 180, -velocity.y, objOGBlock)
 			move_outside(dir, -velocity.y, objOGBlock)
-			//x += pos(0, 1).x
-			//y += pos(0, 1).y
 			velocity.y = 0
 		}
 	}
@@ -213,8 +215,8 @@ function HandleMaxSpeed() {
 	}
 }
 function HandlePosition() {
-	var spd = new Kyh.Point(velocity.x, velocity.y)
-	show_debug_message("spd: (" + string(spd.x) + ", " + string(spd.y) + ")")
+	var spd = new OG.Point(velocity.x, velocity.y)
+	//show_debug_message("spd: (" + string(spd.x) + ", " + string(spd.y) + ")")
 	spd.add_dir(get_grav_direction())
 	x += spd.x
 	y += spd.y
@@ -224,8 +226,8 @@ function HandleSlope() {
 	
 	if (slip) {
 		var is_floor = floor_distance < velocity.y
-		show_debug_message("floor: " + string(floor_direction))
-		show_debug_message("floor_dis: " + string(floor_distance))
+		//show_debug_message("floor: " + string(floor_direction))
+		//show_debug_message("floor_dis: " + string(floor_distance))
 		if (floor_direction < 0) { // slip to right
 			if (is_floor) {
 				move_outside(dir + 135, velocity.y * 1.4, objOGBlock)

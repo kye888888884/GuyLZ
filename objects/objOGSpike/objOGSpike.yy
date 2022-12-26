@@ -1,20 +1,17 @@
 {
   "resourceType": "GMObject",
   "resourceVersion": "1.0",
-  "name": "objOGPipe90",
+  "name": "objOGSpike",
   "spriteId": {
-    "name": "sprOGPipe90",
-    "path": "sprites/sprOGPipe90/sprOGPipe90.yy",
+    "name": "sprOGSpike",
+    "path": "sprites/sprOGSpike/sprOGSpike.yy",
   },
   "solid": false,
   "visible": true,
   "managed": true,
   "spriteMaskId": null,
   "persistent": false,
-  "parentObjectId": {
-    "name": "objOGLines",
-    "path": "objects/objOGLines/objOGLines.yy",
-  },
+  "parentObjectId": null,
   "physicsObject": false,
   "physicsSensor": false,
   "physicsShape": 1,
@@ -27,13 +24,11 @@
   "physicsStartAwake": true,
   "physicsKinematic": false,
   "physicsShapePoints": [],
-  "eventList": [
-    {"resourceType":"GMEvent","resourceVersion":"1.0","name":"","isDnD":false,"eventNum":0,"eventType":0,"collisionObjectId":null,},
-  ],
+  "eventList": [],
   "properties": [],
   "overriddenProperties": [],
   "parent": {
-    "name": "OmniGravity",
-    "path": "folders/Objects/Kyh/OmniGravity.yy",
+    "name": "Kyh",
+    "path": "folders/Objects/Kyh.yy",
   },
 }

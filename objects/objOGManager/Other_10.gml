@@ -1,6 +1,7 @@
 /// @description global library
-globalvar Kyh;
-Kyh = {
+
+globalvar OG;
+OG = {
 	// Math Functions
 	stairs: function(value, step=1, offset=0) {
 		return ((value - offset) div step) * step
@@ -26,8 +27,8 @@ Kyh = {
 	line_in_polygon: function(line, polygon, dense=5) {
 		dense = max(dense, 2)
 		for (var i = 1; i < dense; i++) {
-			var p = Kyh.lerp_point(line.p1, line.p2, i / dense)
-			if (!Kyh.point_in_polygon(p, polygon))
+			var p = OG.lerp_point(line.p1, line.p2, i / dense)
+			if (!OG.point_in_polygon(p, polygon))
 				return false
 		}
 		return true
@@ -82,19 +83,19 @@ Kyh = {
 			return point_distance(x, y, point.x, point.y)
 		}
 		function distance_on_direction(_point, _dir) {
-			var p = Kyh.NewPoint(_point)
-			p.sub(new Kyh.Point(x, y))
+			var p = OG.NewPoint(_point)
+			p.sub(new OG.Point(x, y))
 			
-			var dir = Kyh.NewPoint(_dir)
+			var dir = OG.NewPoint(_dir)
 			dir.add_dir(90)
 			if (dir.get_length() == 0)
 				return -1
 			return abs(p.cross(dir)) / dir.get_length()
 		}
 		function mirror(point) {
-			var p = Kyh.NewPoint(point)
+			var p = OG.NewPoint(point)
 			p.multiply(2)
-			p.sub(new Kyh.Point(x, y))
+			p.sub(new OG.Point(x, y))
 			return p
 		}
 		// Vector functions
@@ -107,11 +108,11 @@ Kyh = {
 	}
 	,
 	NewPoint: function (_p) {
-		return new Kyh.Point(_p.x, _p.y)
+		return new OG.Point(_p.x, _p.y)
 	}
 	,
 	lerp_point: function (p1, p2, weight) {
-		var p = new Kyh.Point(lerp(p1.x, p2.x, weight), lerp(p1.y, p2.y, weight))
+		var p = new OG.Point(lerp(p1.x, p2.x, weight), lerp(p1.y, p2.y, weight))
 		return p
 	}
 	,
@@ -119,19 +120,19 @@ Kyh = {
 	Line: function (_p1, _p2) constructor {
 		p1 = _p1
 		p2 = _p2
-		center = Kyh.lerp_point(p1, p2, 0.5)
+		center = OG.lerp_point(p1, p2, 0.5)
 		function draw(width = 3) {
 		    draw_line_width(p1.x, p1.y, p2.x, p2.y, width)
 			draw_circle(p1.x, p1.y, width * 0.5, false)
 			draw_circle(p2.x, p2.y, width * 0.5, false)
 		}
 		function get_direction() {
-			var p = Kyh.NewPoint(p2)
+			var p = OG.NewPoint(p2)
 			p.sub(p1)
 			return p
 		}
 		function get_normal() {
-			var p = Kyh.NewPoint(p2)
+			var p = OG.NewPoint(p2)
 			p.sub(p1)
 			p.add_dir(90)
 			p.normalize()
@@ -146,3 +147,5 @@ Kyh = {
 		return ds_grid_height(_grid) - 1
 	}
 }
+
+

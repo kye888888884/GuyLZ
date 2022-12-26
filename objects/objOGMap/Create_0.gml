@@ -16,7 +16,7 @@ function map_divide(map) {
     var result = array_create(point_number * 2, 0)
     for (var i = 0; i < point_number; i++) {
         var p1 = map[i]
-        var p2 = Kyh.lerp_point(map[i], (i < point_number - 1) ? map[i + 1] : map[0], 0.5)
+        var p2 = OG.lerp_point(map[i], (i < point_number - 1) ? map[i + 1] : map[0], 0.5)
         result[i * 2] = p1
         result[i * 2 + 1] = p2
     }
@@ -31,9 +31,9 @@ function make_bezier_array(p1, p2, p3, dense=10) {
     var arr = []
     for (var i = 0; i < dense; i++) {
 		var w = i / dense
-        var p12 = Kyh.lerp_point(p1, p2, w)
-        var p23 = Kyh.lerp_point(p2, p3, w)
-        arr[i] = Kyh.lerp_point(p12, p23, w)
+        var p12 = OG.lerp_point(p1, p2, w)
+        var p23 = OG.lerp_point(p2, p3, w)
+        arr[i] = OG.lerp_point(p12, p23, w)
     }
     return arr
 }
@@ -57,7 +57,7 @@ function map_to_bezier(arr_points, dense=10) {
 
     var curve_number = floor(point_number / 2)
     var line_number = dense * curve_number
-    var result = array_create(line_number, new Kyh.Point(0, 0))
+    var result = array_create(line_number, new OG.Point(0, 0))
 	var rest = 0
     var index = 0
     for (var i = 0; i < point_number - 1; i += 2) {
@@ -70,9 +70,9 @@ function map_to_bezier(arr_points, dense=10) {
 			_dense = 0
 		else {
 			var len = p1.distance_to(p3)
-			var u = Kyh.NewPoint(p3)
+			var u = OG.NewPoint(p3)
 			u.sub(p1)
-			var PA = Kyh.NewPoint(p2)
+			var PA = OG.NewPoint(p2)
 			PA.sub(p1)
 		
 			var H = abs(u.cross(PA)) / u.get_length()
@@ -99,7 +99,7 @@ function points_to_lines(arr_points, close=false) {
     var n = array_length(arr_points)
     var result = array_create(n - 1, 0)
     for (var i = 0; i < (close ? n : (n - 1)); i++) {
-        result[i] = new Kyh.Line(arr_points[i % n], arr_points[(i + 1) % n])
+        result[i] = new OG.Line(arr_points[i % n], arr_points[(i + 1) % n])
     }
     return result
 }
@@ -121,21 +121,21 @@ function draw_polygon(arr_points) {
 		draw_set_color(-1)
 		var len = array_length(indexes)
 		
-		var p1 = Kyh.NewPoint(arr_points[indexes[cur % len]])
-		var p2 = Kyh.NewPoint(arr_points[indexes[(cur + 1) % len]])
-		var p3 = Kyh.NewPoint(arr_points[indexes[(cur + 2) % len]])
-		var p12 = Kyh.NewPoint(p2)
+		var p1 = OG.NewPoint(arr_points[indexes[cur % len]])
+		var p2 = OG.NewPoint(arr_points[indexes[(cur + 1) % len]])
+		var p3 = OG.NewPoint(arr_points[indexes[(cur + 2) % len]])
+		var p12 = OG.NewPoint(p2)
 		p12.sub(p1)
-		var p13 = Kyh.NewPoint(p3)
+		var p13 = OG.NewPoint(p3)
 		p13.sub(p1)
 		
-		var line12 = new Kyh.Line(p1, p2)
-		var line13 = new Kyh.Line(p1, p3)
+		var line12 = new OG.Line(p1, p2)
+		var line13 = new OG.Line(p1, p3)
 		
 		var p12_in_line = (indexes[cur % len] + 1 == indexes[(cur + 1) % len]) 
-			|| Kyh.line_in_polygon(line12, arr_points, line12.get_length() * (LINE_CHECK_DENSE / 100))
+			|| OG.line_in_polygon(line12, arr_points, line12.get_length() * (LINE_CHECK_DENSE / 100))
 		var p13_in_line = (indexes[cur % len] + 1 == indexes[(cur + 2) % len]) 
-			|| Kyh.line_in_polygon(line13, arr_points, line13.get_length() * (LINE_CHECK_DENSE / 100))
+			|| OG.line_in_polygon(line13, arr_points, line13.get_length() * (LINE_CHECK_DENSE / 100))
 		
 		if (p12.cross(p13) >= 0 && p12_in_line && p13_in_line) {
 			draw_vertex(p1.x, p1.y)
@@ -158,9 +158,9 @@ function make_map(map) {
 	// coords = [[0, 0]]
 		
 	// 2. Make points with coords
-	//map = array_create(array_length(coords), new Kyh.Point(0, 0))
+	//map = array_create(array_length(coords), new OG.Point(0, 0))
 	//for (var i = 0; i < array_length(coords); i++)
-	//	map[i] = new Kyh.Point(coords[i][0], coords[i][1])
+	//	map[i] = new OG.Point(coords[i][0], coords[i][1])
 
 	// 3. Add point between each two points
 	map = map_divide(map)
@@ -216,12 +216,10 @@ function make_map(map) {
 	spr_bg = sprite_create_from_surface(surf_bg, 0, 0, room_width, room_height, true, false, 0, 0)
 
 	// 7. Make sprite from surface
-	spr = sprite_create_from_surface(surf, 0, 0, room_width, room_height, true, false, 0, 0)
-	sprite_index = spr
+	sprite_index = sprite_create_from_surface(surf, 0, 0, room_width, room_height, true, false, 0, 0)
 }
 
 lines = []
-spr = noone
 spr_bg = noone
 spr_fake_line = noone
 
@@ -238,9 +236,9 @@ var coords = [[100, 100],
 		[700, 500], 
 		[500, 500], 
 		[100, 500]]
-var map = array_create(array_length(coords), new Kyh.Point(0, 0))
+var map = array_create(array_length(coords), new OG.Point(0, 0))
 for (var i = 0; i < array_length(coords); i++)
-	map[i] = new Kyh.Point(coords[i][0], coords[i][1])
+	map[i] = new OG.Point(coords[i][0], coords[i][1])
 make_map(map)
 
 // Shader
@@ -252,7 +250,7 @@ function get_nearst_line(_x, _y) {
 	var n = array_length(lines)
 	var min_distance = 99999
 	var min_index = -1
-	var p = new Kyh.Point(_x, _y)
+	var p = new OG.Point(_x, _y)
 	for (var i = 0; i < n; i++) {
 		var distance = lines[i].center.distance_to(p)
 		if (min_distance > distance && GET_NEARST_LINE_MAX_DISTANCE >= distance) {

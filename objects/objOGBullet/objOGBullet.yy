@@ -1,7 +1,7 @@
 {
   "resourceType": "GMObject",
   "resourceVersion": "1.0",
-  "name": "objKyhBullet",
+  "name": "objOGBullet",
   "spriteId": {
     "name": "sprBullet",
     "path": "sprites/sprBullet/sprBullet.yy",
