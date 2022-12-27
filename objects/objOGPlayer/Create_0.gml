@@ -4,8 +4,9 @@
 #macro PLAYER_SIZE 10 // Width of player
 #macro CAN_CLIMB 1 // Slope of the block that player can climb to the maximum
 #macro MIN_SLIP_DOT 0.70 // minimum of dot value to make player to slip. 0.71 is slightly smaller than cos(45˚)
-#macro MIN_LEAN_DOT 0.85 // minimum of dot value to make player to lean. 0.85 ~= cos(30˚)
-#macro MIN_FLOOR_DISTANCE 180
+#macro MIN_LEAN_DOT 0.72 // minimum of dot value to make player to lean. 0.85 ~= cos(30˚)
+#macro MIN_FLOOR_DISTANCE 180 // minimum of distance of floor to detect floor
+#macro GRAVITY_CHANGE_SPEED 0.4
 
 // Load global library 
 event_user(0)
@@ -58,7 +59,8 @@ mask_index = sprPlayerMask
 r1 = noone
 r2 = noone
 r3 = noone
-floor_distance = 0
+min_floor_distance = 0
+max_floor_distance = 0
 
 // For sliping
 slip = false
@@ -75,8 +77,8 @@ function Step() {
 	slip = false
 	HandleGravityDirection()
 	HandleGravity()
-	if (slip)
-		show_debug_message("slip" + string(irandom(100)))
+	//if (slip)
+	//	show_debug_message("slip" + string(irandom(100)))
 	
 	HandleCollisionWithBlock()
 	HandleMaxSpeed()
@@ -123,25 +125,34 @@ function HandleGravityDirection() {
 	r1 = raycast(-W, 8, ray_dir, MIN_FLOOR_DISTANCE)
 	r2 = raycast(W, 8, ray_dir, MIN_FLOOR_DISTANCE)
 	r3 = raycast(0, 8, ray_dir, MIN_FLOOR_DISTANCE)
-	if (r1 != noone && r2 != noone && r3 != noone) {
-		var dis = r1.dest.distance_on_direction(r2.dest, grav_direction)
+	if (!(r1 == noone && r2 == noone)) {
+		var dis = 16
 		
-		show_debug_message("dis1: " + string(r1.dis))
-		show_debug_message("dis2: " + string(r2.dis))
-		show_debug_message("dis3: " + string(r3.dis))
+		var min_r
+		if (r2.dis < 0)
+			min_r = r1
+		else if (r1.dis < 0)
+			min_r = r2
+		else {
+			if (abs(r1.dis - r2.dis) < 1) {
+				dis = 0
+				min_r = r3
+			}
+			else
+				min_r = (r1.dis < r2.dis) ? r1 : r2
+		}
 		
-		var nearst_line = noone;
-		if (abs(r1.dis - r3.dis) < 1 && abs(r2.dis - r3.dis) < 1)
-			nearst_line = objOGManager.get_nearst_line(r3.dest.x, r3.dest.y)
-		else if (r1.dis < r2.dis)
-			nearst_line = objOGManager.get_nearst_line(r1.dest.x, r1.dest.y)
-		else
-			nearst_line = objOGManager.get_nearst_line(r2.dest.x, r2.dest.y)
+		if (min_r.dest == noone)
+			return;
+		
+		var nearst_line = objOGManager.get_nearst_line(min_r.dest.x, min_r.dest.y)
 		
 		if (nearst_line == noone)
 			return;
-			
-		floor_distance = max(r1.dis, r2.dis, r3.dis)
+		
+		min_floor_distance = min_r.dis
+		max_floor_distance = max(r1.dis, r2.dis, r3.dis)
+		
 		
 		var normal, lean_dot
 		if (nearst_line != noone) {
@@ -154,7 +165,7 @@ function HandleGravityDirection() {
 				normal.multiply(-1)
 				floor_direction *= -1
 			}
-			show_debug_message("lean: " + string(lean_dot))
+			//show_debug_message("lean: " + string(lean_dot))
 		}
 		
 		if (nearst_line != noone) {
@@ -178,13 +189,14 @@ function HandleGravityDirection() {
 	}
 }
 function HandleGravity() {
-	grav_direction = OG.lerp_point(grav_direction, grav_direction_to, 0.3)
+	grav_direction = OG.lerp_point(grav_direction, grav_direction_to, GRAVITY_CHANGE_SPEED)
 	velocity.y += grav_force
 	image_angle = get_grav_direction()
 }
 function HandleCollisionWithBlock() {
 	var dir = grav_direction.get_direction()
-	if (meeting(velocity.x, 0) && meeting(velocity.x, -maxHSpeed * CAN_CLIMB)) {
+	
+	if (meeting(velocity.x, 0) && meeting(velocity.x, -maxHSpeed * CAN_CLIMB - 1)) {
 		if (velocity.x > 0) {
 			move_contact(dir + 90, velocity.x, objOGBlock)
 			velocity.x = 0
@@ -202,8 +214,8 @@ function HandleCollisionWithBlock() {
 				velocity.y = 0
 			}
 		}
-		else if (velocity.y < 0) {
-			move_outside(dir, -velocity.y, objOGBlock)
+		else {
+			move_contact(dir + 180, -velocity.y + 1, objOGBlock)
 			velocity.y = 0
 		}
 	}
@@ -216,7 +228,6 @@ function HandleMaxSpeed() {
 }
 function HandlePosition() {
 	var spd = new OG.Point(velocity.x, velocity.y)
-	//show_debug_message("spd: (" + string(spd.x) + ", " + string(spd.y) + ")")
 	spd.add_dir(get_grav_direction())
 	x += spd.x
 	y += spd.y
@@ -225,9 +236,7 @@ function HandleSlope() {
     var dir = grav_direction.get_direction()
 	
 	if (slip) {
-		var is_floor = floor_distance < velocity.y
-		//show_debug_message("floor: " + string(floor_direction))
-		//show_debug_message("floor_dis: " + string(floor_distance))
+		var is_floor = max_floor_distance < velocity.y
 		if (floor_direction < 0) { // slip to right
 			if (is_floor) {
 				move_outside(dir + 135, velocity.y * 1.4, objOGBlock)
@@ -244,8 +253,11 @@ function HandleSlope() {
 		}
 	}
 	
-    if (meeting(0, 0) && velocity.y >= 0) {
-		move_outside(dir + 180, velocity.y + 1, objOGBlock, true)
+    if (meeting(0, 0)) {
+		if (velocity.y > 0 || min_floor_distance < maxHSpeed)
+			move_outside(dir + 180, velocity.y + maxHSpeed, objOGBlock, true)
+		if (velocity.y <= 0)
+			move_outside(dir, -velocity.y + maxHSpeed, objOGBlock)
     }
 	
 	if (velocity.x != 0 && meeting(0, maxHSpeed + 1)) {

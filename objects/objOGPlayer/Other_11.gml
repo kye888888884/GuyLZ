@@ -80,7 +80,7 @@ function raycast(offset_x, offset_y, dir, len=500) {
 			break
 		if (col == noone) {
 			if (is_start)
-				return noone
+				return { dest: noone, dis: -1 }
 			is_over = false
 			len += gap
 		}
